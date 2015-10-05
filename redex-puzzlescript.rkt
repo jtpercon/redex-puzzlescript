@@ -4,13 +4,13 @@
 ; incomplete grammar of puzzle script
 ; TODO: late, rigid, random, probably more stuff
 (define-language puzzlescript
-  (game (preamble objects legend sounds layers rules winconditions levels))
+  (game (preamble tileset legend sounds layers rules winconditions levels))
   (label variable-not-otherwise-mentioned)
   ; preamble
   (preamble (string ...))
-  ; objects
-  (objects (object ...))
-  (object (label label ... color color ... pixels))
+  ; tileset
+  (tileset (tile ...))
+  (tile (label label ... color color ... pixels))
   (color (rgb natural natural natural) ; should be 0-255 but this is not checked (yet?)
          ; color list from http://www.puzzlescript.net/Documentation/objects.html
          black white grey darkgrey lightgrey gray darkgray lightgray red darkred lightred brown darkbrown
@@ -46,7 +46,7 @@
 (define-metafunction puzzlescript
   puzzle->string : any -> string
   ; game
-  [(puzzle->string (preamble objects legend sounds layers rules winconditions levels))
+  [(puzzle->string (preamble tileset legend sounds layers rules winconditions levels))
    ,(string-join (term ("(Compiled from redex-puzzlescript)"
                         (puzzle->string preamble)
                         ""
@@ -54,7 +54,7 @@
                         "OBJECTS"
                         "========"
                         ""
-                        (puzzle->string objects)
+                        (puzzle->string tileset)
                         ""
                         "======="
                         "LEGEND"
@@ -93,9 +93,9 @@
                         (puzzle->string levels))) "\n")]
   ; preamble, sounds, winconditions, levels
   [(puzzle->string (string ...)) ,(string-join (term (string ...)) "\n")]
-  ; objects
-  [(puzzle->string (object ...)) ,(string-join (term ((puzzle->string object) ...)) "\n\n")]
-  ; object
+  ; tileset
+  [(puzzle->string (tile ...)) ,(string-join (term ((puzzle->string tile) ...)) "\n\n")]
+  ; tile
   [(puzzle->string (label ... color ... pixels))
    ,(string-append (string-join (map symbol->string (term (label ...))) " ")
                    "\n"
@@ -179,9 +179,9 @@
 ; - correctness checks -
 ; ----------------------
 
-; returns #t if all the pixels in the object are valid for the number of colors given
+; returns #t if all the pixels in the tile are valid for the number of colors given
 (define-metafunction puzzlescript
-  wf-object : object -> bool
-  [(wf-object (label ... color ... pixels))
+  wf-tile : tile -> bool
+  [(wf-tile (label ... color ... pixels))
    ,(let ([len (length (term (color ...)))])
       (empty? (filter (λ (px) (and (number? px) (>= px len))) (flatten (term pixels)))))])
