@@ -1,5 +1,6 @@
 #lang racket
 (require redex)
+(provide puzzlescript puzzle->string define-tiles) 
 
 ; incomplete grammar of puzzle script
 ; TODO: late, rigid, random, probably more stuff
@@ -184,4 +185,43 @@
   wf-tile : tile -> bool
   [(wf-tile (label ... color ... pixels))
    ,(let ([len (length (term (color ...)))])
-      (empty? (filter (λ (px) (and (number? px) (>= px len))) (flatten (term pixels)))))])
+      (empty? (filter (λ (px) (and (number? px) (>= px len))) (flatten (term pixels)))))]
+  [(wf-tile any) #f])
+
+; -------------
+; - utilities -
+; -------------
+
+; functions for working with sprite definitions
+(define (char->pixel c)
+  (case c
+    [(#\0) 0] [(#\1) 1] [(#\2) 2]
+    [(#\3) 3] [(#\4) 4] [(#\5) 5]
+    [(#\6) 6] [(#\7) 7] [(#\8) 8]
+    [(#\9) 9] [(#\.) (term dot)]))
+(define (string->list-of-pixels s) (map char->pixel (string->list s)))
+(define (string->grid-of-pixels s) (map string->list-of-pixels (string-split s "\n")))
+
+; function for working with level definitions
+(define (string->grid-of-tiles s) (map string->list (string-split s "\n")))
+
+; ----------------------
+; - tileset generation -
+; ----------------------
+
+(define-syntax-rule (define-tiles tilenames colors pixelstring)
+  (define-tiles-base (term tilenames) (term colors) pixelstring))
+
+; returns a term containing descriptions of a set of tiles that make up a single picture
+; TODO handle this for more than one tile
+; returns #f if size mismatch
+(define (define-tiles-base tilenames colors pixelstring)
+  (let ([pixels (string->grid-of-pixels pixelstring)])
+    (let ([expected-size (if (list? tilenames) (* 25 (length tilenames)) 25)]
+          [given-size (if (empty? pixels)
+                          0
+                          (for/sum ([line pixels]) (length line)))])
+      (if (not (= given-size expected-size))
+        #f
+        ; TODO handle more than one tile
+        (append (flatten (term (,tilenames ,colors))) (term (,pixels)))))))
